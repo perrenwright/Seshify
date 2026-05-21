@@ -1,0 +1,41 @@
+name: Surf Predictor Agent Check
+
+on:
+  schedule:
+    - cron: '0 18 * * 5'  # Every Friday at 6 PM UTC
+  workflow_dispatch:      # Allows manual triggering from GitHub UI
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./surf_agent
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Surf-Predictor-Agent
+        env:
+          STORMGLASS_KEY: ${{ secrets.STORMGLASS_KEY }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SURF_LAT: ${{ secrets.SURF_LAT }}
+          SURF_LNG: ${{ secrets.SURF_LNG }}
+        run: python main.py
