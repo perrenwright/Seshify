@@ -38,29 +38,46 @@ def extract_metric(hour_data: dict, key: str) -> float:
     except (ValueError, TypeError):
         return 0.0
 
+def parse_coordinate(val: Optional[str], default: float) -> float:
+    """
+    Safely parses a coordinate string from an environment variable.
+    Handles None, empty strings, and whitespace before falling back to default.
+    """
+    if val is None or not str(val).strip():
+        return default
+    try:
+        return float(str(val).strip())
+    except (ValueError, TypeError):
+        logger.warning(f"Invalid coordinate value '{val}', falling back to default: {default}")
+        return default
+
 def get_llm():
     """
     Returns a configured LangChain Chat Model.
     Dynamically selects between ChatGoogleGenerativeAI and ChatOpenAI based on environment variables.
     """
-    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
+    gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    google_key = (os.getenv("GOOGLE_API_KEY") or "").strip()
+    openai_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+
+    if gemini_key or google_key:
         from langchain_google_genai import ChatGoogleGenerativeAI
-        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        api_key = gemini_key or google_key
         # Use gemini-2.5-flash as the state-of-the-art default
         return ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
-    elif os.getenv("OPENAI_API_KEY"):
+    elif openai_key:
         from langchain_openai import ChatOpenAI
-        return ChatOpenAI(model="gpt-4o-mini")
+        return ChatOpenAI(model="gpt-4o-mini", api_key=openai_key)
     else:
-        raise ValueError("No LLM API key found. Set GEMINI_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY.")
+        raise ValueError("No LLM API key found. Set GEMINI_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY in environment or secrets.")
 
 def fetch_weather(state: AgentState) -> dict:
     """
     Fetcher Node: Queries the Stormglass.io weather/point endpoint.
     """
-    lat = float(os.getenv("SURF_LAT", "33.6839"))
-    lng = float(os.getenv("SURF_LNG", "-118.0122"))
-    api_key = os.getenv("STORMGLASS_KEY")
+    lat = parse_coordinate(os.getenv("SURF_LAT"), 33.6839)
+    lng = parse_coordinate(os.getenv("SURF_LNG"), -118.0122)
+    api_key = (os.getenv("STORMGLASS_KEY") or "").strip()
     
     if not api_key:
         logger.warning("STORMGLASS_KEY is not set. Fetcher will fail unless mocked.")
@@ -157,8 +174,8 @@ def send_notification(state: AgentState) -> dict:
     reasoning = state.get("reasoning", "")
     
     if decision == "GO":
-        token = os.getenv("TG_TOKEN")
-        chat_id = os.getenv("TG_CHAT_ID")
+        token = (os.getenv("TG_TOKEN") or "").strip()
+        chat_id = (os.getenv("TG_CHAT_ID") or "").strip()
         
         # Prepare the HTML message content
         message = (

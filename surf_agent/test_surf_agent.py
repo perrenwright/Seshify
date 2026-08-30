@@ -6,10 +6,22 @@ import os
 # Ensure local directories can be imported
 sys.path.append(".")
 
-from nodes import extract_metric, judge_conditions, send_notification
+from nodes import extract_metric, judge_conditions, send_notification, parse_coordinate
 from tools import fetch_stormglass_data, send_telegram_message
 
 class TestSurfAgent(unittest.TestCase):
+    
+    def test_parse_coordinate(self):
+        # Case 1: Empty string (like missing GitHub Actions secret)
+        self.assertEqual(parse_coordinate("", 33.6839), 33.6839)
+        # Case 2: Whitespace
+        self.assertEqual(parse_coordinate("   ", -118.0122), -118.0122)
+        # Case 3: None
+        self.assertEqual(parse_coordinate(None, 33.6839), 33.6839)
+        # Case 4: Valid numeric string
+        self.assertEqual(parse_coordinate("34.0259", 33.6839), 34.0259)
+        # Case 5: Invalid string
+        self.assertEqual(parse_coordinate("not-a-number", 33.6839), 33.6839)
     
     def test_extract_metric(self):
         # Case 1: Simple dict

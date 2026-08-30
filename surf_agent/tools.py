@@ -16,7 +16,7 @@ def fetch_stormglass_data(lat: float, lng: float, api_key: str) -> dict:
     Returns:
         dict: The raw JSON response from the Stormglass API.
     """
-    if not api_key:
+    if not api_key or not str(api_key).strip():
         raise ValueError("Stormglass API key is missing. Please set STORMGLASS_KEY in your environment.")
         
     url = "https://api.stormglass.io/v2/weather/point"
@@ -26,7 +26,7 @@ def fetch_stormglass_data(lat: float, lng: float, api_key: str) -> dict:
         "params": "waveHeight,windSpeed,windDirection,wavePeriod"
     }
     headers = {
-        "Authorization": api_key
+        "Authorization": str(api_key).strip()
     }
     
     logger.info(f"Fetching Stormglass data for lat: {lat}, lng: {lng}")
@@ -50,9 +50,12 @@ def send_telegram_message(token: str, chat_id: str, message: str) -> dict:
     Returns:
         dict: The raw JSON response from the Telegram Bot API.
     """
-    if not token:
+    token_str = str(token).strip() if token else ""
+    chat_id_str = str(chat_id).strip() if chat_id else ""
+    
+    if not token_str:
         raise ValueError("Telegram Bot Token is missing. Please set TG_TOKEN in your environment.")
-    if not chat_id:
+    if not chat_id_str:
         raise ValueError("Telegram Chat ID is missing. Please set TG_CHAT_ID in your environment.")
         
     url = f"https://api.telegram.org/bot{token}/sendMessage"
