@@ -63,11 +63,12 @@ def get_llm():
     if gemini_key or google_key:
         from langchain_google_genai import ChatGoogleGenerativeAI
         api_key = gemini_key or google_key
-        # Use gemini-2.5-flash as the state-of-the-art default
-        return ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
+        model_name = (os.getenv("GEMINI_MODEL") or "gemini-1.5-flash").strip()
+        return ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key)
     elif openai_key:
         from langchain_openai import ChatOpenAI
-        return ChatOpenAI(model="gpt-4o-mini", api_key=openai_key)
+        model_name = (os.getenv("OPENAI_MODEL") or "gpt-4o-mini").strip()
+        return ChatOpenAI(model=model_name, api_key=openai_key)
     else:
         raise ValueError("No LLM API key found. Set GEMINI_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY in environment or secrets.")
 
